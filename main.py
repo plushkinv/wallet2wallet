@@ -53,7 +53,7 @@ for private_key in keys_list:
         account = web3.eth.account.from_key(private_key)
         wallet = account.address    
         balance = web3.eth.get_balance(wallet)
-        balance_decimal = Web3.from_wei(balance, 'ether')
+        balance_decimal = float(Web3.from_wei(balance, 'ether'))
     except Exception as error:
         log_error(f'Ошибка подключения в ноде: {error}')   
 
@@ -62,11 +62,12 @@ for private_key in keys_list:
         log(f"low balance , меньше {config.minimal_need_balance}")          
         continue
 
+    ostavit_nativ = random.uniform(config.ostavit_nativ[0], config.ostavit_nativ[1])
     if config.bridge_all_money:
-        amount = balance_decimal - decimal.Decimal(config.ostavit_nativ * config.gas_kef)
+        amount = balance_decimal - ostavit_nativ * config.gas_kef
     else:
         amount = random.uniform(config.bridge_min,config.bridge_max)
-    if balance_decimal < decimal.Decimal(amount) + decimal.Decimal(config.ostavit_nativ):
+    if balance_decimal < amount + ostavit_nativ:
         log(f" low balance")          
         continue
 
