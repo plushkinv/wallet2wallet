@@ -62,19 +62,24 @@ for private_key in keys_list:
         log(f"low balance , меньше {config.minimal_need_balance}")          
         continue
 
-    ostavit_nativ = random.uniform(config.ostavit_nativ[0], config.ostavit_nativ[1])
-    if config.bridge_all_money:
-        amount = balance_decimal - ostavit_nativ * config.gas_kef
+    # ожидает подходящий газ
+    wait_gas_price_eth()
+
+    ostavit_nativ = web3.to_wei(random.uniform(config.ostavit_nativ[0], config.ostavit_nativ[1]), 'ether')
+    if config.send_all_money:
+        if config.ostavit_nativ_tolko_na_tx:
+            ostavit_nativ = 21000 * web3.eth.gas_price * config.gas_kef
+            amount = balance - ostavit_nativ
+        else:
+            amount = balance - ostavit_nativ
     else:
-        amount = random.uniform(config.bridge_min,config.bridge_max)
-    if balance_decimal < amount + ostavit_nativ:
+        amount = web3.to_wei(random.uniform(config.bridge_min,config.bridge_max), 'ether')
+    if balance < amount + ostavit_nativ:
         log(f" low balance")          
         continue
 
-    value = web3.to_wei(amount, 'ether')
+    value = int(amount)
 
-    # ожидает подходящий газ
-    wait_gas_price_eth()
 
     try:
         wallet_out = web3.to_checksum_address(wallet_out)
@@ -88,13 +93,13 @@ for private_key in keys_list:
             'gasPrice': gasPrice,
             'nonce': web3.eth.get_transaction_count(wallet),
         }
-        gasLimit = int(web3.eth.estimate_gas(transaction)* config.gas_kef)
+        gasLimit = int(web3.eth.estimate_gas(transaction))
         transaction['gas'] = gasLimit
         if conf['type']:
             maxPriorityFeePerGas = web3.eth.max_priority_fee
             fee_history = web3.eth.fee_history(10, 'latest', [10, 90])
             baseFee=round(mean(fee_history['baseFeePerGas']))
-            maxFeePerGas = maxPriorityFeePerGas + round(baseFee * config.gas_kef)
+            maxFeePerGas = maxPriorityFeePerGas + round(baseFee * config.gas_price_kef)
 
             del transaction['gasPrice']
             transaction['maxFeePerGas'] = maxFeePerGas
